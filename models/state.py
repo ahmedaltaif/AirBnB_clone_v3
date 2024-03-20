@@ -1,40 +1,35 @@
 #!/usr/bin/python3
+
 """ State Module for HBNB project """
-from models.base_model import Base, BaseModel
-from os import environ
-from sqlalchemy import Column, String
+
 from sqlalchemy.orm import relationship
 import models
 from models.base_model import Base, BaseModel
 from models.city import City
+from sqlalchemy.ext.declarative import declarative_base
+import shlex
+from sqlalchemy import Column, Integer, String
 
 
 class State(BaseModel, Base):
     """ State class """
 
-     if environ.get('HBNB_TYPE_STORAGE') == 'db':
+    __tablename__ = "states"
+    name = Column(String(128), nullable=False)
+    cities = relationship("City", cascade='all, delete, delete-orphan',
+                          backref="state")
 
-        __tablename__ = "states"
-        name = Column(String(128), nullable=False)
-
-        cities = relationship("City",
-                              backref="state",
-                              cascade="all, delete-orphan",
-                              passive_deletes=True)
-    else:
-        name = ""
-
-    def __init__(self, *args, **kwargs):
-        """initializes state"""
-        super().__init__(*args, **kwargs)
-
-    if environ.get('HBNB_TYPE_STORAGE') != 'db':
-        @property
-        def cities(self):
-            """Return the list of City objects from storage linked to the current State
-
-            Returns: cities in a state
-            """
-            return [city for city in models.storage.all(
-                City).values() if city.state_id == self.id]
-
+    @property
+    def cities(self):
+        var = models.storage.all()
+        lista = []
+        result = []
+        for key in var:
+            city = key.replace('.', ' ')
+            city = shlex.split(city)
+            if (city[0] == 'City'):
+                lista.append(var[key])
+        for elem in lista:
+            if (elem.state_id == self.id):
+                result.append(elem)
+        return (result)

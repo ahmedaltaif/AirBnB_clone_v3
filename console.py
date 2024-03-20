@@ -2,8 +2,6 @@
 """ Console Module """
 import cmd
 import sys
-import shlex
-from os import environ
 from models.base_model import BaseModel
 from models.__init__ import storage
 from models.user import User
@@ -13,18 +11,18 @@ from models.city import City
 from models.amenity import Amenity
 from models.review import Review
 
-classes = {
-            'BaseModel': BaseModel, 'User': User, 'Place': Place,
-            'State': State, 'City': City, 'Amenity': Amenity,
-            'Review': Review
-        }
-
 
 class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
 
     # determines prompt for interactive/non-interactive modes
     prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''
+
+    classes = {
+               'BaseModel': BaseModel, 'User': User, 'Place': Place,
+               'State': State, 'City': City, 'Amenity': Amenity,
+               'Review': Review
+              }
 
     dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
     types = {
@@ -124,23 +122,21 @@ class HBNBCommand(cmd.Cmd):
         try:
             if not args:
                 raise SyntaxError()
-            my_list = args.split(" ")
-            obj = eval("{}()".format(my_list[0]))
-            for attr in my_list[1:]:
-                my_att = attr.split('=')
-                try:
-                    casted = HBNBCommand.verify_attribute(my_att[1])
-                except Exception:
-                    continue
-                if not casted:
-                    continue
-                setattr(obj, my_att[0], casted)
-            obj.save()
-            print("{}".format(obj.id))
+            arg_list = args.split(" ")
+            kw = {}
+            for arg in arg_list[1:]:
+                arg_splited = arg.split("=")
+                arg_splited[1] = eval(arg_splited[1])
+                if type(arg_splited[1]) is str:
+                    arg_splited[1] = arg_splited[1].replace("_", " ").replace('"', '\\"')
+                kw[arg_splited[0]] = arg_splited[1]
         except SyntaxError:
             print("** class name missing **")
-        except NameError as e:
+        except NameError:
             print("** class doesn't exist **")
+        new_instance = HBNBCommand.classes[arg_list[0]](**kw)
+        new_instance.save()
+        print(new_instance.id)
 
     def help_create(self):
         """ Help information for the create method """
@@ -215,20 +211,19 @@ class HBNBCommand(cmd.Cmd):
 
     def do_all(self, args):
         """ Shows all objects, or all objects of a class"""
-        args = shlex.split(arg)
-        obj_list = []
-        if len(args) == 0:
-            obj_dict = storage.all()
-        elif args[0] in classes:
-            obj_dict = storage.all(classes[args[0]])
+        print_list = []
+
+        if args:
+            args = args.split(' ')[0]  # remove possible trailing args
+            if args not in HBNBCommand.classes:
+                print("** class doesn't exist **")
+                return
+            for k, v in storage.all(HBNBCommand.classes[args]).items():
+                print_list.append(str(v))
         else:
-            print("** class doesn't exist **")
-            return False
-        for key in obj_dict:
-            obj_list.append(str(obj_dict[key]))
-        print("[", end="")
-        print(", ".join(obj_list), end="")
-        print("]")
+            for k, v in storage.all().items():
+                print_list.append(str(v))
+        print(print_list)
 
     def help_all(self):
         """ Help information for the all command """
@@ -334,38 +329,6 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
-
-    @classmethod
-    def verify_attribute(cls, attribute):
-        """verifies that an attribute is correctly formatted
-
-        Args:
-            attribute (any): attribute to be verified.
-
-        Returns:
-            any: attribute.
-        """
-        if attribute[0] is attribute[-1] is '"':
-            for i, c in enumerate(attribute[1:-1]):
-                if c is '"' and attribute[i] is not '\\':
-                    return None
-                if c is " ":
-                    return None
-            return attribute.strip('"').replace('_', ' ').replace("\\\"", "\"")
-        else:
-            flag = 0
-            allowed = "0123456789.-"
-            for c in attribute:
-                if c not in allowed:
-                    return None
-                if c is '.' and flag == 1:
-                    return None
-                elif c is '.' and flag == 0:
-                    flag = 1
-            if flag == 1:
-                return float(attribute)
-            else:
-                return int(attribute)
 
 
 if __name__ == "__main__":
