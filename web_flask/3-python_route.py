@@ -26,6 +26,7 @@ def cfun(text):
 
 
 @app.route('/python/<text>', strict_slashes=False)
+@app.route('/python', strict_slashes=False)
 def pythoncol(text="is cool"):
     """display 'python' followed by the value of the text variable"""
     return 'python ' + text.replace('_', ' ')
