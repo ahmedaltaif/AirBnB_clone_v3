@@ -1,6 +1,7 @@
 #!/usr/bin/python3
-""" start a flask app """
-
+"""
+starts a Flask web application
+"""
 
 from flask import Flask
 app = Flask(__name__)
@@ -8,12 +9,13 @@ app = Flask(__name__)
 
 @app.route('/', strict_slashes=False)
 def index():
-    """ returns “Hello HBNB!” """
+    """returns Hello HBNB!"""
     return 'Hello HBNB!'
 
+
 @app.route('/hbnb', strict_slashes=False)
-def index():
-    """ returns “ HBNB” """
+def hbnb():
+    """returns HBNB"""
     return 'HBNB'
 
 if __name__ == '__main__':
